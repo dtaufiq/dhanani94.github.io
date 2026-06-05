@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Taufiq Dhanani">
+  <meta name="description" content="Interactive family tree">
+  <title>Family Tree</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- D3 v7 vendored locally (no CDN) so the site is offline/archival-stable. -->
+  <script src="vendor/d3.min.js"></script>
+</head>
+<body>
+
+  <!-- Toolbar -->
+  <header class="toolbar" id="toolbar">
+    <div class="tb-group tb-title">
+      <strong>Family Tree</strong>
+      <span class="dirty" id="dirty" hidden title="Unsaved changes">● unsaved</span>
+    </div>
+
+    <div class="tb-group focus-bar" id="focus-bar" hidden>
+      <span class="focus-chip">Viewing <strong id="focus-label"></strong></span>
+      <button id="btn-reset" title="Back to the default branch" hidden>↺ Reset</button>
+    </div>
+
+    <div class="tb-group">
+      <button id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+      <button id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+      <button id="btn-zoom-fit" title="Reset to fit">Fit</button>
+    </div>
+
+    <div class="tb-group">
+      <button id="btn-edit-mode" aria-pressed="false" hidden>Edit mode</button>
+      <button id="btn-add" hidden>+ Add person</button>
+    </div>
+
+    <div class="tb-group" id="save-controls" hidden>
+      <button id="btn-save" hidden title="Save directly to data/family.json">Save</button>
+      <button id="btn-export" title="Download family.json">Export</button>
+      <button id="btn-import" title="Load a family.json from disk">Import</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+
+    <div class="tb-group tb-right">
+      <button id="btn-print" title="Print / Save as PDF">Print</button>
+    </div>
+  </header>
+
+  <!-- Tree canvas -->
+  <main class="canvas">
+    <svg id="tree" role="img" aria-label="Family tree"></svg>
+
+    <!-- Fatal load error (e.g. opened via file://) -->
+    <div class="fatal" id="fatal" hidden>
+      <h2>Couldn't load the family data</h2>
+      <p id="fatal-msg"></p>
+      <p class="hint">Serve over http: from the <code>family_tree</code> folder run
+        <code>python3 -m http.server 8000</code> then open
+        <code>http://localhost:8000/</code>.</p>
+    </div>
+  </main>
+
+  <!-- Detail panel -->
+  <aside class="detail" id="detail" hidden aria-label="Person details">
+    <button class="panel-close" id="detail-close" aria-label="Close" onclick="this.closest('.detail').hidden=true">×</button>
+    <img id="d-photo" class="d-photo" hidden alt="">
+    <h2 id="d-name"></h2>
+    <p class="d-dates" id="d-dates"></p>
+    <button id="d-focus" class="focus-btn" title="Show this person's side of the family">🔍 View this side</button>
+    <dl class="d-fields" id="d-fields"></dl>
+
+    <h3>Parents</h3>
+    <ul class="relations" id="d-parents"></ul>
+    <h3>Spouses</h3>
+    <ul class="relations" id="d-spouses"></ul>
+    <h3>Children</h3>
+    <ul class="relations" id="d-children"></ul>
+
+    <button id="d-edit" class="primary" hidden>Edit</button>
+    <button id="d-setroot" class="d-setroot" hidden>Set as default</button>
+  </aside>
+
+  <!-- Validation / issues panel -->
+  <section class="issues clean collapsed" id="issues" aria-live="polite">
+    <header id="issues-header" tabindex="0" role="button" aria-label="Toggle issues panel">
+      <span class="issues-badge" id="issues-count">0</span>
+      <span id="issues-summary">No issues</span>
+    </header>
+    <ul id="issues-list"></ul>
+  </section>
+
+  <!-- Transient toast -->
+  <div class="flash" id="flash" role="status" aria-live="polite"></div>
+
+  <!-- Edit dialog -->
+  <dialog id="edit-dialog" class="edit-dialog">
+    <form id="edit-form" method="dialog">
+      <h2 id="edit-title">Edit person</h2>
+
+      <label for="f-name">Name <span class="req">*</span></label>
+      <input id="f-name" type="text" required autocomplete="off">
+
+      <div class="row">
+        <div>
+          <label for="f-birth">Birth</label>
+          <input id="f-birth" type="text" placeholder="1950 or 1950-04-12" autocomplete="off">
+        </div>
+        <div>
+          <label for="f-death">Death</label>
+          <input id="f-death" type="text" placeholder="blank = living" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="f-gender">Gender</label>
+          <input id="f-gender" type="text" placeholder="M / F / other" autocomplete="off">
+        </div>
+        <div>
+          <label for="f-maiden">Maiden name</label>
+          <input id="f-maiden" type="text" autocomplete="off">
+        </div>
+      </div>
+
+      <label for="f-photo">Photo (relative path)</label>
+      <input id="f-photo" type="text" placeholder="data/photos/p1.jpg" autocomplete="off">
+
+      <label>Parents <span class="muted">(max 2)</span></label>
+      <div id="f-parents" class="people-picker"></div>
+
+      <label>Spouses</label>
+      <div id="f-spouses" class="people-picker"></div>
+
+      <label for="f-notes">Notes</label>
+      <textarea id="f-notes" rows="3"></textarea>
+
+      <div class="dialog-actions">
+        <button type="button" id="edit-delete" class="danger">Delete</button>
+        <span class="spacer"></span>
+        <button type="button" id="edit-cancel">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Print-only container; the full-tree SVG is cloned here for printing. -->
+  <div id="print-root" aria-hidden="true"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

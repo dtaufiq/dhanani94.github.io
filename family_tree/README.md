@@ -61,13 +61,13 @@ serve over http.
 Big trees have several branches meeting at the top. To explore just one side:
 
 - Click a person → **🔍 View this side** in the detail panel (or **double-click**
-  their node). The tree re-roots to that person's earliest ancestors and shows
-  that whole branch — their parents, grandparents, aunts, uncles, and cousins.
-  - Clicking your **mom** walks up to *her* parents, so you get her side.
-    Clicking **yourself** walks up to all your grandparents, so you get your
-    whole extended branch.
-- The toolbar shows **Viewing &lt;name&gt;'s side**; press **↺ Reset** to go back
-  to the default branch.
+  their node). The tree climbs a **single parent line** (the father's, by
+  default) up to the topmost ancestor and shows that one side — that apex couple
+  and all their descendants (aunts, uncles, cousins on that side).
+  - This shows **one** side, not both. Focusing on yourself shows your father's
+    side; to see your mother's side, focus on **her** (click mom → her side).
+- The toolbar shows **Viewing &lt;topmost ancestor&gt;'s side** — the side is
+  named after the apex it climbs to. Press **↺ Reset** to go back to the default.
 - The **default branch** is set by `meta.rootId` in `data/family.json` (shown on
   load and after Reset). In **Edit mode**, click a person and use **Set as
   default** to change it, then Save/Export.

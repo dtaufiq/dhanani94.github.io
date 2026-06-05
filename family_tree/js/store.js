@@ -84,25 +84,24 @@ export class Store {
     return p.parents.map((pid) => this.get(pid)).filter(Boolean);
   }
 
-  // Topmost ancestors of `id`: walk up `parents` and collect everyone with no
-  // parents in the data (plus `id` itself if it has none). These become the
-  // roots of "this person's side" — render their full descendant tree to show
-  // that branch (the person plus their aunts, uncles, cousins, etc.).
-  getAncestorRoots(id) {
-    const roots = new Set();
+  // Apex of `id`'s lineage: walk up a SINGLE parent line (the first/father
+  // parent at each step) to the topmost ancestor. Returns just that apex.
+  // Following one parent keeps a focus to ONE side of the family — the layout
+  // pairs the apex with their spouse and renders that couple's descendants, so
+  // you never see both the mother's and father's sides spliced together.
+  // To see the other side, focus on the relevant parent instead.
+  getLineageApex(id) {
+    let cur = id;
     const seen = new Set();
-    const stack = [id];
-    while (stack.length) {
-      const cur = stack.pop();
-      if (seen.has(cur)) continue;
+    while (cur && !seen.has(cur)) {
       seen.add(cur);
       const p = this.get(cur);
-      if (!p) continue;
+      if (!p) break;
       const parents = p.parents.filter((pid) => this.has(pid));
-      if (parents.length === 0) roots.add(cur);
-      else parents.forEach((pid) => stack.push(pid));
+      if (parents.length === 0) return cur;
+      cur = parents[0]; // follow the first parent (father) up
     }
-    return [...roots];
+    return cur || id;
   }
 
   setRootId(id) {

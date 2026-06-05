@@ -205,22 +205,26 @@ On **delete**, automatically clean up: remove the deleted ID from every other pe
 
 ### 9.6 Branch focus / "view this side" (`render.js` + `app.js`)
 Large trees have several branches converging at the top. The user can focus on
-one person's **side** of the family:
+**one side** of a person's family:
 - **Focus action:** click a person → **"View this side"** in the detail panel, or
-  **double-click** their node. The view re-roots to that person's *topmost
-  ancestors* (`getAncestorRoots`) and renders that entire branch descending —
-  the person plus their parents, grandparents, aunts, uncles, and cousins. People
-  outside that branch are hidden (not just dimmed).
-  - Because the focus is computed from the *clicked* person, clicking your mother
-    walks up to **her** parents only, so you get her side; clicking yourself walks
-    up to all of your grandparents, so you get your whole extended branch.
-- **Default branch:** on load and after **Reset**, the view shows the branch of
-  `meta.rootId`. If `meta.rootId` is null/absent, the full tree is shown.
+  **double-click** their node. The view climbs a **single parent line** (the
+  first/father parent at each step, `getLineageApex`) to the topmost ancestor,
+  then renders that apex couple's descendants — the person plus their aunts,
+  uncles, and cousins **on that one side**. People outside it are hidden.
+  - Following one parent line is deliberate: focusing on yourself shows your
+    **father's** side, not both parents' families spliced together at the top. To
+    see the other side, focus on that parent (e.g. click your mother → her side).
+- **Side label = the apex:** the chip reads "Viewing &lt;topmost ancestor&gt;'s
+  side" — named after the apex the lineage climbs to, not the clicked person. The
+  clicked person stays selected so you can locate them within the side.
+- **Default side:** on load and after **Reset**, the view shows the side of
+  `meta.rootId` (its lineage apex). If `meta.rootId` is null/absent, the full
+  tree is shown.
 - **Reset:** a toolbar **↺ Reset** button (visible only when off the default
-  view) returns to the default branch. A chip shows "Viewing &lt;name&gt;'s side".
+  side) returns to it.
 - **Set default (edit mode):** the detail panel's **Set as default** button writes
   the selected person to `meta.rootId` (persisted on save/export).
-- **Print** uses whatever branch is currently focused, so you can print one side.
+- **Print** uses whatever side is currently focused, so you can print one side.
 
 ---
 

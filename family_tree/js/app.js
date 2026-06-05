@@ -10,7 +10,7 @@ const store = new Store();
 let renderer = null;
 let editor = null;
 let editMode = false;
-let focusedId = null; // person whose branch is currently shown (null = everyone)
+let focusApexId = null; // topmost ancestor defining the side in view (null = everyone)
 
 // On the deployed host, editing can't persist anywhere useful → view-only.
 const DEPLOYED_HOSTS = [/\.github\.io$/i, /(^|\.)dhanani94\.com$/i];
@@ -56,10 +56,11 @@ async function main() {
 
 // --- rendering pipeline -----------------------------------------------------
 function refresh() {
-  // If the focused person was deleted, fall back to the default view.
-  if (focusedId && !store.has(focusedId)) { resetFocus(); return; }
-  // Recompute branch roots in case ancestry changed since the last focus.
-  renderer.focusRoots = focusedId ? store.getAncestorRoots(focusedId) : null;
+  // If the focused apex was deleted, fall back to the default view.
+  if (focusApexId && !store.has(focusApexId)) { resetFocus(); return; }
+  // Re-climb in case a parent was added above the apex since we last focused.
+  if (focusApexId) focusApexId = store.getLineageApex(focusApexId);
+  renderer.focusRoots = focusApexId ? [focusApexId] : null;
   renderer.render();
   runValidation();
 }
@@ -77,26 +78,27 @@ function onEditorChange(id) {
 }
 
 // --- branch focus -----------------------------------------------------------
-// Show one person's "side" of the family: their topmost ancestors and everyone
-// descending from them (the person plus their aunts, uncles, cousins, etc.).
+// Show one side of `id`'s family: climb a single parent line to the apex and
+// render that apex couple's descendants (id plus their aunts, uncles, cousins
+// on that side). The clicked person stays selected so you can find them.
 function focusOn(id) {
   if (!store.has(id)) return;
-  focusedId = id;
-  renderer.setFocus(store.getAncestorRoots(id));
+  focusApexId = store.getLineageApex(id);
+  renderer.setFocus([focusApexId]);
   renderer.select(id);
   renderer.centerOn(id);
   runValidation();
   updateFocusBar();
 }
 
-// Return to the default branch (meta.rootId), or the full tree if none set.
+// Return to the default side (meta.rootId's lineage), or the full tree if none.
 function resetFocus() {
   const rootId = store.meta.rootId;
   if (rootId && store.has(rootId)) {
-    focusedId = rootId;
-    renderer.setFocus(store.getAncestorRoots(rootId));
+    focusApexId = store.getLineageApex(rootId);
+    renderer.setFocus([focusApexId]);
   } else {
-    focusedId = null;
+    focusApexId = null;
     renderer.setFocus(null);
   }
   runValidation();
@@ -115,11 +117,14 @@ function updateViewCount(count) {
 
 function updateFocusBar() {
   const bar = el("focus-bar");
-  if (focusedId && store.has(focusedId)) {
-    el("focus-label").textContent = `${store.get(focusedId).name}’s side`;
+  if (focusApexId && store.has(focusApexId)) {
+    // The "side" is named after the topmost ancestor (the apex) in view.
+    el("focus-label").textContent = `${store.get(focusApexId).name}’s side`;
     bar.hidden = false;
-    // Reset is only meaningful when we've moved off the default view.
-    el("btn-reset").hidden = focusedId === store.meta.rootId;
+    // Reset is only meaningful when we've moved off the default side.
+    const rootId = store.meta.rootId;
+    const defaultApex = rootId && store.has(rootId) ? store.getLineageApex(rootId) : null;
+    el("btn-reset").hidden = focusApexId === defaultApex;
   } else {
     bar.hidden = true;
   }

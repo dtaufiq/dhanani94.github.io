@@ -114,7 +114,7 @@ A **flat array of people**. Relationships are stored on each person as ID refere
 |--------------|-------------------|----------|-------|
 | `id`         | string            | yes      | Stable unique ID (e.g. `p1`, or a UUID). Never reused. |
 | `name`       | string            | yes      | Display name. |
-| `birth`      | string \| null    | no       | Free-form or ISO date; treat as string. |
+| `birth`      | string \| null    | no       | Free-form or full ISO date (`YYYY-MM-DD`); stored verbatim. The tree shows the **year only**; the detail panel shows the full value. |
 | `death`      | string \| null    | no       | Same; `null`/absent = living. |
 | `gender`     | string \| null    | no       | Optional, free-form (e.g. `M`/`F`/other/empty). Used only for optional styling. |
 | `parents`    | string[]          | yes      | 0–2 person IDs. Empty array allowed. |
@@ -168,12 +168,21 @@ On **delete**, automatically clean up: remove the deleted ID from every other pe
 - Top-down generational layout. Render couples (spouses) as adjacent/joined nodes with children descending from the union.
 - **Zoom and pan** via `d3-zoom`: scroll/pinch to zoom, drag to pan, plus on-screen **+ / − / reset-to-fit** buttons.
 - **Click a person** → open a detail panel (§9.2). Hover highlights the node.
-- Each node shows name and birth–death years; keep readable at default zoom.
+- Each node shows name and birth–death **years only** (full dates are kept in the
+  data and shown in the detail panel); keep readable at default zoom.
+- Layout reserves each subtree's full width (couple width included) so couples
+  never overlap an adjacent subtree, regardless of how many children they have.
+- A toolbar chip shows the **member count** in the current view (e.g. "59 of 98
+  people" when focused on a branch, or "98 people" for the whole tree).
 - Should handle up to a few hundred people without noticeable lag.
 
 ### 9.2 Person detail panel
 - Slide-in or modal showing all fields, photo if present, and quick links to jump to parents/spouses/children.
-- In edit mode, an **Edit** button opens the edit form for that person.
+- In edit mode, an **Edit** button opens the edit form for that person, plus
+  quick-add shortcuts: **Add child** (opens the add form with the selected
+  person — and their spouse, if any — prefilled as parents) and **Add spouse**
+  (prefills the spouse link; shown only when the person has no spouse yet). The
+  newly created person is auto-selected after saving.
 
 ### 9.3 Edit mode (`edit.js`)
 - Toggle button to enter/leave edit mode (only meaningfully enabled when not on the deployed Pages host).

@@ -37,6 +37,11 @@ serve over http.
    - Relationships are chosen from search dropdowns over existing people — you
      never type raw IDs. Setting a person's **parents** is the canonical action;
      the children view updates automatically (children are derived, not stored).
+   - Quick shortcuts on the detail panel: **Add child** (parents pre-filled with
+     the selected person and their spouse) and **Add spouse** (shown when there
+     isn't one yet). The new person is selected automatically after saving.
+   - Birthdays can be full dates (`YYYY-MM-DD`) — stored as-is, shown as the year
+     on the tree and in full in the detail panel.
 4. **Save:**
    - **Chrome / Edge:** click **Save** to write directly back to
      `data/family.json` (File System Access API).

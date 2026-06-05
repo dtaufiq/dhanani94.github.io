@@ -274,9 +274,25 @@ export function birthYear(p) {
   return m ? parseInt(m[1], 10) : null;
 }
 
+// Full birth/death strings (e.g. "1994-05-12") — used in the detail panel.
 export function lifespan(p) {
   const b = p.birth ? String(p.birth) : "";
   const d = p.death ? String(p.death) : "";
+  if (!b && !d) return "";
+  return `${b}–${d}`;
+}
+
+// Year extracted from a date-ish string ("1994-05-12" -> "1994").
+export function yearOf(value) {
+  if (!value) return null;
+  const m = /(\d{4})/.exec(String(value));
+  return m ? m[1] : null;
+}
+
+// Years only — used on the tree nodes to keep them compact.
+export function lifespanYears(p) {
+  const b = yearOf(p.birth) || "";
+  const d = yearOf(p.death) || "";
   if (!b && !d) return "";
   return `${b}–${d}`;
 }

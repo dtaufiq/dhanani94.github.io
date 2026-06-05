@@ -6,7 +6,7 @@
 // are centered over their children (Reingold–Tilford style). Up to a few
 // hundred people render without lag.
 
-import { lifespan, birthYear } from "./store.js";
+import { lifespanYears, birthYear } from "./store.js";
 
 const NODE_W = 168;
 const NODE_H = 64;
@@ -15,10 +15,11 @@ const V_GAP = 96;            // vertical gap between generations
 const SLOT = NODE_W + H_GAP; // horizontal advance per single node
 
 export class TreeRenderer {
-  constructor(svgEl, store, { onSelect, onFocus } = {}) {
+  constructor(svgEl, store, { onSelect, onFocus, onRender } = {}) {
     this.store = store;
     this.onSelect = onSelect || (() => {});
     this.onFocus = onFocus || (() => {});
+    this.onRender = onRender || (() => {});
     this.selectedId = null;
     // When set to an array of person ids, only those roots and their
     // descendants are laid out (a single "branch"). null = render everyone.
@@ -48,6 +49,7 @@ export class TreeRenderer {
   render() {
     const { nodes, links } = this._layout();
     this._draw(nodes, links);
+    this.onRender(nodes.length);
     return { nodes, links };
   }
 
@@ -109,7 +111,6 @@ export class TreeRenderer {
     const placed = new Set();
     const nodes = [];            // { person, cx, y } (cx = node center x)
     const nodeIndex = new Map(); // id -> node
-    let cursor = 0;              // next free leaf center x
 
     const place = (person, cx, y) => {
       const node = { person, cx, y };
@@ -118,55 +119,68 @@ export class TreeRenderer {
       return node;
     };
 
-    // Lay out the family anchored at `anchor`, return its parent-row center x.
-    const layoutFamily = (anchorId, depth) => {
-      if (placed.has(anchorId)) return nodeIndex.get(anchorId).cx;
+    // Build a family-unit tree: each unit is a couple (or single) plus the
+    // child units descending from their union. The global `placed` set ensures
+    // every person appears exactly once.
+    const buildUnit = (anchorId) => {
       placed.add(anchorId);
       const anchor = store.get(anchorId);
-      const y = depth * (NODE_H + V_GAP);
-
-      // Choose a partner to draw beside: first spouse not already placed.
       let partner = null;
       for (const sid of anchor.spouses) {
         if (store.has(sid) && !placed.has(sid)) { partner = store.get(sid); break; }
       }
       if (partner) placed.add(partner.id);
-
       const coupleIds = partner ? [anchorId, partner.id] : [anchorId];
       const children = store
         .getChildrenOfCouple(coupleIds)
-        .filter((c) => !placed.has(c.id));
+        .filter((c) => !placed.has(c.id))
+        .map((c) => buildUnit(c.id));
+      return { anchor, partner, children, width: 0, centerX: 0 };
+    };
 
-      let centerX;
-      if (children.length === 0) {
-        // Leaf: consume slot(s) at the cursor.
-        if (partner) {
-          const aCx = cursor;
-          const pCx = cursor + SLOT;
-          cursor += 2 * SLOT;
-          place(anchor, aCx, y);
-          place(partner, pCx, y);
-          centerX = (aCx + pCx) / 2;
-        } else {
-          const aCx = cursor;
-          cursor += SLOT;
-          place(anchor, aCx, y);
-          centerX = aCx;
-        }
+    // Total width a couple's own row needs.
+    const coupleW = (u) => (u.partner ? 2 * NODE_W + H_GAP : NODE_W);
+
+    // Post-order measure: a subtree is at least as wide as its couple AND as
+    // wide as its children side by side. Reserving the couple's full width is
+    // what stops it from overflowing into a sibling subtree (the overlap bug).
+    const measure = (u) => {
+      const cw = coupleW(u);
+      if (!u.children.length) { u.width = cw; return cw; }
+      let childrenW = H_GAP * (u.children.length - 1);
+      for (const c of u.children) childrenW += measure(c);
+      u.width = Math.max(cw, childrenW);
+      return u.width;
+    };
+
+    // Pre-order placement into a disjoint block [leftX, leftX + u.width].
+    const placeUnit = (u, leftX, depth) => {
+      const y = depth * (NODE_H + V_GAP);
+      let center;
+      if (!u.children.length) {
+        center = leftX + u.width / 2;
       } else {
-        // Lay out children first, then center the couple over their span.
-        const childCenters = children.map((c) => layoutFamily(c.id, depth + 1));
-        centerX = (Math.min(...childCenters) + Math.max(...childCenters)) / 2;
-        if (partner) {
-          place(anchor, centerX - SLOT / 2, y);
-          place(partner, centerX + SLOT / 2, y);
-        } else {
-          place(anchor, centerX, y);
+        let childrenW = H_GAP * (u.children.length - 1);
+        for (const c of u.children) childrenW += c.width;
+        let cx = leftX + (u.width - childrenW) / 2; // center the children block
+        const centers = [];
+        for (const c of u.children) {
+          placeUnit(c, cx, depth + 1);
+          centers.push(c.centerX);
+          cx += c.width + H_GAP;
         }
-        // Keep cursor past this subtree so later roots don't overlap.
-        cursor = Math.max(cursor, Math.max(...childCenters) + SLOT);
+        center = (centers[0] + centers[centers.length - 1]) / 2;
+        // Clamp so the couple stays inside its own block (no sibling overlap).
+        const half = coupleW(u) / 2;
+        center = Math.max(leftX + half, Math.min(leftX + u.width - half, center));
       }
-      return centerX;
+      u.centerX = center;
+      if (u.partner) {
+        place(u.anchor, center - (NODE_W + H_GAP) / 2, y);
+        place(u.partner, center + (NODE_W + H_GAP) / 2, y);
+      } else {
+        place(u.anchor, center, y);
+      }
     };
 
     // Roots: in focus mode, only the given branch roots; otherwise everyone
@@ -200,22 +214,25 @@ export class TreeRenderer {
     const roots = rootList
       .slice()
       .sort((a, b) => (birthYear(a) ?? 9999) - (birthYear(b) ?? 9999));
+
+    // Build the root forest, then any people unreachable as roots (full view
+    // only — focus deliberately shows just the focused branch).
+    const rootUnits = [];
     for (const r of roots) {
-      if (!placed.has(r.id)) {
-        layoutFamily(r.id, 0);
-        cursor += SLOT; // gap between separate root families
-      }
+      if (!placed.has(r.id)) rootUnits.push(buildUnit(r.id));
     }
-    // When showing everyone, place any people unreachable as roots (e.g. cyclic
-    // data) trailing so nothing is silently hidden. In focus mode we deliberately
-    // show only the focused branch, so skip this.
     if (!this.focusRoots) {
       for (const p of store.all()) {
-        if (!placed.has(p.id)) {
-          layoutFamily(p.id, 0);
-          cursor += SLOT;
-        }
+        if (!placed.has(p.id)) rootUnits.push(buildUnit(p.id));
       }
+    }
+
+    // Measure + place each top-level family left to right with a clear gap.
+    let cursorX = 0;
+    for (const u of rootUnits) {
+      measure(u);
+      placeUnit(u, cursorX, 0);
+      cursorX += u.width + SLOT; // gap between separate root families
     }
 
     this._nodeIndex = nodeIndex;
@@ -312,7 +329,7 @@ export class TreeRenderer {
 
     const all = enter.merge(nodeSel);
     all.attr("transform", (d) => `translate(${d.cx - NODE_W / 2},${d.y})`)
-      .attr("aria-label", (d) => `${d.person.name} ${lifespan(d.person)}`);
+      .attr("aria-label", (d) => `${d.person.name} ${lifespanYears(d.person)}`);
     all.classed("gender-m", (d) => (d.person.gender || "").toUpperCase() === "M")
       .classed("gender-f", (d) => (d.person.gender || "").toUpperCase() === "F")
       .classed("deceased", (d) => !!d.person.death)
@@ -325,7 +342,7 @@ export class TreeRenderer {
     all.select("text.node-dates")
       .attr("x", NODE_W / 2).attr("y", 46)
       .attr("text-anchor", "middle")
-      .text((d) => lifespan(d.person));
+      .text((d) => lifespanYears(d.person));
   }
 
   _linkPath(d) {

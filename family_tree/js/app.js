@@ -1,6 +1,6 @@
 // app.js — entry point: capability/mode detection, wiring, detail + issues panels.
 
-import { Store, lifespan } from "./store.js";
+import { Store, lifespan, lifespanYears } from "./store.js";
 import { TreeRenderer } from "./render.js";
 import { validate } from "./validate.js";
 import { Editor } from "./edit.js";
@@ -29,8 +29,12 @@ async function main() {
     return;
   }
 
-  renderer = new TreeRenderer(el("tree"), store, { onSelect: handleSelect, onFocus: focusOn });
-  editor = new Editor(store, { onAfterChange: () => { refresh(); markDirty(); } });
+  renderer = new TreeRenderer(el("tree"), store, {
+    onSelect: handleSelect,
+    onFocus: focusOn,
+    onRender: updateViewCount,
+  });
+  editor = new Editor(store, { onAfterChange: onEditorChange });
   const print = setupPrint(renderer, el("tree"));
   el("btn-print").addEventListener("click", print);
 
@@ -60,6 +64,18 @@ function refresh() {
   runValidation();
 }
 
+// After an add/edit: re-render, mark dirty, and select the affected person so
+// the new node is highlighted and its detail panel is shown.
+function onEditorChange(id) {
+  refresh();
+  markDirty();
+  if (id && store.has(id)) {
+    renderer.select(id);
+    handleSelect(id);
+    renderer.centerOn(id);
+  }
+}
+
 // --- branch focus -----------------------------------------------------------
 // Show one person's "side" of the family: their topmost ancestors and everyone
 // descending from them (the person plus their aunts, uncles, cousins, etc.).
@@ -85,6 +101,16 @@ function resetFocus() {
   }
   runValidation();
   updateFocusBar();
+}
+
+// Show how many people are visible in the current view.
+function updateViewCount(count) {
+  const total = store.all().length;
+  const elc = el("view-count");
+  if (!elc) return;
+  elc.textContent = count === total
+    ? `${count} people`
+    : `${count} of ${total} people`;
 }
 
 function updateFocusBar() {
@@ -166,6 +192,19 @@ function handleSelect(id) {
   el("d-edit").hidden = !editMode;
   el("d-edit").onclick = () => editor.openEdit(id);
 
+  // Quick-add shortcuts (edit mode). "Add child" prefills the parent couple;
+  // "Add spouse" prefills the spouse and only shows when there isn't one yet.
+  const addChildBtn = el("d-add-child");
+  addChildBtn.hidden = !editMode;
+  addChildBtn.onclick = () => {
+    const parents = [id, ...store.get(id).spouses].slice(0, 2);
+    editor.openNewWith({ title: `Add child of ${p.name}`, parents });
+  };
+
+  const addSpouseBtn = el("d-add-spouse");
+  addSpouseBtn.hidden = !editMode || store.get(id).spouses.length > 0;
+  addSpouseBtn.onclick = () => editor.openNewWith({ title: `Add spouse of ${p.name}`, spouses: [id] });
+
   // "Set as default" (edit mode): make this person the branch shown on reset.
   const setRootBtn = el("d-setroot");
   setRootBtn.hidden = !editMode;
@@ -208,7 +247,7 @@ function renderRelations(containerId, people) {
     const a = document.createElement("button");
     a.type = "button";
     a.className = "link";
-    a.textContent = `${person.name} ${lifespan(person)}`.trim();
+    a.textContent = `${person.name} ${lifespanYears(person)}`.trim();
     a.addEventListener("click", () => { renderer.select(person.id); renderer.centerOn(person.id); });
     li.appendChild(a);
     ul.appendChild(li);

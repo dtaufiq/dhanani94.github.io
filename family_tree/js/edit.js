@@ -26,9 +26,15 @@ export class Editor {
 
   // --- open forms ----------------------------------------------------------
   openNew() {
+    this.openNewWith({});
+  }
+
+  // Open the add-person form with some relationships prefilled (used by the
+  // detail panel's "Add spouse" / "Add child" shortcuts).
+  openNewWith({ title = "Add person", parents = [], spouses = [] } = {}) {
     this.currentId = null;
-    this._fill({ name: "", birth: "", death: "", gender: "", maidenName: "", notes: "", photo: "", parents: [], spouses: [] });
-    document.getElementById("edit-title").textContent = "Add person";
+    this._fill({ name: "", birth: "", death: "", gender: "", maidenName: "", notes: "", photo: "", parents, spouses });
+    document.getElementById("edit-title").textContent = title;
     document.getElementById("edit-delete").hidden = true;
     this.dialog.showModal();
     this.form.querySelector("#f-name").focus();
@@ -145,14 +151,17 @@ export class Editor {
     };
     if (!data.name) { this.form.querySelector("#f-name").focus(); return; }
 
+    let id;
     if (this.currentId) {
       this.store.updatePerson(this.currentId, data);
+      id = this.currentId;
     } else {
       const created = this.store.addPerson(data);
       this.store._reciprocateSpouses(created);
+      id = created.id;
     }
     this.dialog.close();
-    this.onAfterChange();
+    this.onAfterChange(id);
   }
 
   _deleteCurrent() {

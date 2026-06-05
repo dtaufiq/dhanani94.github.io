@@ -16,6 +16,7 @@
   <header class="toolbar" id="toolbar">
     <div class="tb-group tb-title">
       <strong>Family Tree</strong>
+      <span class="view-count" id="view-count" title="People visible in the current view"></span>
       <span class="dirty" id="dirty" hidden title="Unsaved changes">● unsaved</span>
     </div>
 
@@ -77,6 +78,10 @@
     <h3>Children</h3>
     <ul class="relations" id="d-children"></ul>
 
+    <div class="d-quickadd">
+      <button id="d-add-child" hidden>+ Add child</button>
+      <button id="d-add-spouse" hidden>+ Add spouse</button>
+    </div>
     <button id="d-edit" class="primary" hidden>Edit</button>
     <button id="d-setroot" class="d-setroot" hidden>Set as default</button>
   </aside>

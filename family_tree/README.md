@@ -68,6 +68,9 @@ Big trees have several branches meeting at the top. To explore just one side:
     side; to see your mother's side, focus on **her** (click mom → her side).
 - The toolbar shows **Viewing &lt;topmost ancestor&gt;'s side** — the side is
   named after the apex it climbs to. Press **↺ Reset** to go back to the default.
+- **🔗 Share** copies a deep link to the current side (the URL carries
+  `#side=<id>`), so you can send someone straight to, say, your maternal or
+  paternal side. Opening the link restores that exact view.
 - The **default branch** is set by `meta.rootId` in `data/family.json` (shown on
   load and after Reset). In **Edit mode**, click a person and use **Set as
   default** to change it, then Save/Export.

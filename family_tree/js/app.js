@@ -41,7 +41,8 @@ async function main() {
   // Re-render + re-validate whenever the model changes.
   store.onChange(() => updateDirtyIndicator());
 
-  resetFocus();
+  // Honour a shared deep-link (#side=<id>) if present, else the default side.
+  applyFocusFromHash();
   // Defer the initial fit until the SVG has its real layout dimensions.
   requestAnimationFrame(() => renderer.resetToFit(false));
 
@@ -52,6 +53,8 @@ async function main() {
 
   window.addEventListener("resize", () => renderer && renderer.resetToFit(false));
   window.addEventListener("keydown", onKeydown);
+  // React to the URL changing (pasted link in this tab, manual edit).
+  window.addEventListener("hashchange", applyFocusFromHash);
 }
 
 // --- rendering pipeline -----------------------------------------------------
@@ -89,6 +92,7 @@ function focusOn(id) {
   renderer.centerOn(id);
   runValidation();
   updateFocusBar();
+  updateHash();
 }
 
 // Return to the default side (meta.rootId's lineage), or the full tree if none.
@@ -103,6 +107,56 @@ function resetFocus() {
   }
   runValidation();
   updateFocusBar();
+  updateHash();
+}
+
+// --- shareable deep-link (#side=<id>) ---------------------------------------
+function defaultApex() {
+  const rootId = store.meta.rootId;
+  return rootId && store.has(rootId) ? store.getLineageApex(rootId) : null;
+}
+
+function hashFocusId() {
+  const m = /[#&]side=([^&]+)/.exec(location.hash);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+// Reflect the current side into the URL (omit it when on the default side so a
+// plain link still works). replaceState updates the bar without a hashchange.
+function updateHash() {
+  const wanted = focusApexId && focusApexId !== defaultApex()
+    ? "#side=" + encodeURIComponent(focusApexId)
+    : "";
+  if ((location.hash || "") !== wanted) {
+    history.replaceState(null, "", location.pathname + location.search + wanted);
+  }
+}
+
+// Apply whatever the URL asks for: a shared id is climbed to its apex (so any
+// person on a side yields that side); an absent/invalid id shows the default.
+function applyFocusFromHash() {
+  const id = hashFocusId();
+  if (id && store.has(id)) {
+    const apex = store.getLineageApex(id);
+    if (apex === focusApexId) return;
+    focusApexId = apex;
+    renderer.setFocus([apex]);
+    runValidation();
+    updateFocusBar();
+  } else if (focusApexId !== defaultApex()) {
+    resetFocus();
+  }
+}
+
+function shareLink() {
+  updateHash();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(location.href)
+      .then(() => flash("Link to this view copied"))
+      .catch(() => flash("Copy the link from the address bar"));
+  } else {
+    flash("Copy the link from the address bar");
+  }
 }
 
 // Show how many people are visible in the current view.
@@ -265,6 +319,7 @@ function wireToolbar() {
   el("btn-zoom-out").addEventListener("click", () => renderer.zoomBy(1 / 1.3));
   el("btn-zoom-fit").addEventListener("click", () => renderer.resetToFit(true));
   el("btn-reset").addEventListener("click", () => resetFocus());
+  el("btn-share").addEventListener("click", () => shareLink());
 
   el("btn-edit-mode").addEventListener("click", toggleEditMode);
   el("btn-add").addEventListener("click", () => editor.openNew());

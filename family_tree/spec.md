@@ -222,6 +222,11 @@ Large trees have several branches converging at the top. The user can focus on
   tree is shown.
 - **Reset:** a toolbar **↺ Reset** button (visible only when off the default
   side) returns to it.
+- **Shareable link:** the current side is encoded in the URL hash
+  (`#side=<id>`) so it survives reloads and can be sent to someone — they land
+  directly on that side (e.g. a maternal vs paternal link). A **🔗 Share** button
+  copies the link to the clipboard. The hash holds any person on the side; it's
+  climbed to the apex on load, and the default side uses a plain (hashless) URL.
 - **Set default (edit mode):** the detail panel's **Set as default** button writes
   the selected person to `meta.rootId` (persisted on save/export).
 - **Print** uses whatever side is currently focused, so you can print one side.

@@ -117,7 +117,7 @@
     {
       "id": "1b2c351b-ffde-4cb0-a7e0-a622fbbcb85c",
       "name": "Ariz Himani",
-      "birth": null,
+      "birth": "1988-12-21",
       "death": null,
       "gender": "M",
       "parents": [],
@@ -126,7 +126,7 @@
       ],
       "maidenName": null,
       "notes": null,
-      "photo": null
+      "photo": "https://voyageatl.com/wp-content/uploads/2025/10/c-1759781218672-personal_1759781217957_1759781217957_ariz_himani_ariz-face-6-736x600.jpg"
     },
     {
       "id": "1c4f4e29-102e-4286-9cae-b7e3ff4eb886",
@@ -239,7 +239,7 @@
       "id": "303323e9-fdba-4352-aaae-99caf66c8a6b",
       "name": "Shahabuddin Dhanani",
       "birth": null,
-      "death": null,
+      "death": "2019",
       "gender": "M",
       "parents": [],
       "spouses": [
@@ -486,7 +486,7 @@
     {
       "id": "6a007728-bb7b-46ba-badb-6833d734db01",
       "name": "Faiz Aly",
-      "birth": null,
+      "birth": "1996",
       "death": null,
       "gender": "M",
       "parents": [
@@ -498,7 +498,7 @@
       ],
       "maidenName": null,
       "notes": null,
-      "photo": null
+      "photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKgOs33CVvNQ8D4N8_ZanpyJ91ALW2UjFn6g&s"
     },
     {
       "id": "6e074dcb-8e1c-4b38-be44-99e5660da8ce",
@@ -539,7 +539,8 @@
       "death": null,
       "gender": "F",
       "parents": [
-        "9294ba16-8cac-49df-b763-215a51ac108c"
+        "9294ba16-8cac-49df-b763-215a51ac108c",
+        "303323e9-fdba-4352-aaae-99caf66c8a6b"
       ],
       "spouses": [
         "2bfc3969-ac49-4c7a-b097-5860a97b356e"
@@ -1062,7 +1063,7 @@
     {
       "id": "ece07c7f-7aa8-4d36-8b5a-a11fa32d6411",
       "name": "Sara Ataollahi Aly",
-      "birth": null,
+      "birth": "2001",
       "death": null,
       "gender": "F",
       "parents": [],
@@ -1080,7 +1081,8 @@
       "death": null,
       "gender": "F",
       "parents": [
-        "9294ba16-8cac-49df-b763-215a51ac108c"
+        "9294ba16-8cac-49df-b763-215a51ac108c",
+        "303323e9-fdba-4352-aaae-99caf66c8a6b"
       ],
       "spouses": [
         "94a54e35-c42f-4493-a298-ec4b731f3184"
@@ -1135,7 +1137,7 @@
     {
       "id": "f5aa6811-c0d5-4d84-8d83-9f44de1c21a5",
       "name": "Shan Aly",
-      "birth": null,
+      "birth": "2002",
       "death": null,
       "gender": "M",
       "parents": [

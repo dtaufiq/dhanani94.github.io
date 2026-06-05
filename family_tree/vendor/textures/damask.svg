@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Seamless ogee-trellis damask. Faint antique gold; tiles on a 120px grid.
+       Used as a very low-contrast wallpaper texture behind the family tree. -->
+  <g fill="none" stroke="#c8a951" stroke-opacity="0.085" stroke-width="1.2">
+    <path d="M60,0 C60,28 0,32 0,60 C0,88 60,92 60,120"/>
+    <path d="M60,0 C60,28 120,32 120,60 C120,88 60,92 60,120"/>
+  </g>
+  <!-- central rosette in each ogee cell -->
+  <g fill="#c8a951" fill-opacity="0.07">
+    <circle cx="60" cy="60" r="3"/>
+    <ellipse cx="60" cy="49" rx="2.8" ry="6"/>
+    <ellipse cx="60" cy="71" rx="2.8" ry="6"/>
+    <ellipse cx="49" cy="60" rx="6" ry="2.8"/>
+    <ellipse cx="71" cy="60" rx="6" ry="2.8"/>
+  </g>
+  <!-- small node ornaments at the lattice intersections -->
+  <g fill="#c8a951" fill-opacity="0.06">
+    <circle cx="60" cy="0" r="2"/>
+    <circle cx="60" cy="120" r="2"/>
+    <circle cx="0" cy="60" r="2"/>
+    <circle cx="120" cy="60" r="2"/>
+  </g>
+</svg>

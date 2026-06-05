@@ -1,21 +1,44 @@
-/* styles.css — screen UI + @media print rules for archival output. */
+/* styles.css — screen UI + @media print rules for archival output.
+   Theme: an old-house tapestry — deep aged green, antique gold, parchment ink,
+   classical serif type (no decorative graphics, just the palette + fonts). */
+
+/* Vendored serif fonts (latin), variable weight axis. */
+@font-face {
+  font-family: "Cinzel";
+  src: url("../vendor/fonts/cinzel.woff2") format("woff2");
+  font-weight: 400 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "EB Garamond";
+  src: url("../vendor/fonts/ebgaramond.woff2") format("woff2");
+  font-weight: 400 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "EB Garamond";
+  src: url("../vendor/fonts/ebgaramond-italic.woff2") format("woff2");
+  font-weight: 400 600; font-style: italic; font-display: swap;
+}
 
 :root {
-  --bg: #0f1419;
-  --panel: #1b232c;
-  --panel-2: #232e39;
-  --ink: #e7edf3;
-  --muted: #8a99a8;
-  --line: #3a4756;
-  --accent: #4ea1ff;
-  --accent-ink: #0a1622;
-  --male: #2b4a6b;
-  --female: #6b2b50;
-  --neutral: #344150;
-  --error: #ff6b6b;
-  --warn: #ffcc66;
-  --radius: 10px;
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --bg: #19211b;          /* canvas — deep aged green-black */
+  --panel: #20281f;       /* toolbar / panels */
+  --panel-2: #2a3327;     /* buttons / chips */
+  --ink: #e8dcbf;         /* parchment text */
+  --muted: #9c916e;       /* faded gold / khaki */
+  --line: #6e5f38;        /* antique gold, dim — borders & connectors */
+  --gold: #c8a951;        /* bright antique gold — accents */
+  --accent: #c8a951;      /* selection / links reuse the gold */
+  --accent-ink: #1a211a;  /* dark green ink on gold */
+  --male: #233028;        /* subtle cool-green plaque tint */
+  --female: #312a21;      /* subtle warm-brown plaque tint */
+  --neutral: #262f22;     /* aged plaque */
+  --error: #cf6049;       /* faded crimson */
+  --warn: #d9b25a;        /* aged gold */
+  --clean: #6e8650;       /* mossy green (no-issues) */
+  --radius: 4px;          /* squared, antique */
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --font-serif: "EB Garamond", "Hoefler Text", Garamond, Georgia, "Times New Roman", serif;
+  --font-display: "Cinzel", "Trajan Pro", "Hoefler Text", Georgia, serif;
 }
 
 * { box-sizing: border-box; }
@@ -23,27 +46,29 @@
 html, body {
   margin: 0;
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  background-color: var(--bg);
   color: var(--ink);
   overflow: hidden;
 }
 
 button {
   font: inherit;
+  font-size: 15px;
   color: var(--ink);
   background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 6px 12px;
+  border-radius: var(--radius);
+  padding: 5px 12px;
   cursor: pointer;
 }
-button:hover { background: #2c3946; }
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-button.primary:hover { filter: brightness(1.08); }
+button:hover { background: #34402d; border-color: var(--gold); }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button.primary { background: var(--gold); color: var(--accent-ink); border-color: var(--gold); font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); background: var(--gold); }
 button.danger { background: transparent; border-color: var(--error); color: var(--error); }
-button.danger:hover { background: rgba(255, 107, 107, 0.12); }
+button.danger:hover { background: rgba(207, 96, 73, 0.14); border-color: var(--error); }
 
 /* --- Toolbar --------------------------------------------------------------- */
 .toolbar {
@@ -59,7 +84,12 @@ button.danger:hover { background: rgba(255, 107, 107, 0.12); }
   z-index: 30;
 }
 .tb-group { display: flex; align-items: center; gap: 6px; }
-.tb-title strong { font-size: 15px; }
+.tb-title strong {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gold);
+}
 .tb-right { margin-left: auto; }
 .dirty { color: var(--warn); font-size: 12px; }
 .view-count {
@@ -80,32 +110,57 @@ button.danger:hover { background: rgba(255, 107, 107, 0.12); }
 [aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
 /* --- Canvas ---------------------------------------------------------------- */
-.canvas { position: absolute; inset: 52px 0 0 0; }
-#tree { width: 100%; height: 100%; display: block; cursor: grab; }
+.canvas { position: absolute; inset: 52px 0 0 0; overflow: hidden; }
+/* The faint damask lives on the SVG so it can pan/zoom with the tree (parallax
+   is driven from the zoom transform in render.js); background-position/size are
+   updated live. */
+#tree {
+  width: 100%; height: 100%; display: block; cursor: grab;
+  background-image: url("../vendor/textures/damask.svg");
+  background-repeat: repeat;
+  background-size: 120px 120px;
+  background-position: 0 0;
+}
 #tree:active { cursor: grabbing; }
+/* Fixed vignette "lighting" so the edges stay faded as cloth even while the
+   wallpaper underneath moves. Sits above the tree but ignores pointer events. */
+.canvas::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse at 50% 42%, rgba(17, 22, 15, 0) 42%, rgba(7, 10, 6, 0.62) 100%);
+}
 
-/* Nodes */
+/* Nodes — aged name plaques with gold borders */
 .node { cursor: pointer; }
 .node-box {
   fill: var(--neutral);
   stroke: var(--line);
-  stroke-width: 1.5;
+  stroke-width: 1.25;
   transition: fill 0.12s, stroke 0.12s;
 }
 .node.gender-m .node-box { fill: var(--male); }
 .node.gender-f .node-box { fill: var(--female); }
-.node:hover .node-box { stroke: var(--accent); stroke-width: 2.5; }
-.node.selected .node-box { stroke: var(--accent); stroke-width: 3; }
+.node:hover .node-box { stroke: var(--gold); stroke-width: 2; }
+.node.selected .node-box { stroke: var(--gold); stroke-width: 2.5; }
 .node.deceased .node-box { stroke-dasharray: 4 3; }
-.node-name { fill: var(--ink); font-size: 14px; font-weight: 600; pointer-events: none; }
-.node-dates { fill: var(--muted); font-size: 11px; pointer-events: none; }
-.node:focus-visible .node-box { stroke: var(--accent); stroke-width: 3; }
+.node-name {
+  fill: var(--ink); font-family: var(--font-serif);
+  font-size: 15px; font-weight: 600; letter-spacing: 0.02em;
+  pointer-events: none;
+}
+.node-dates {
+  fill: var(--muted); font-family: var(--font-serif);
+  font-size: 12px; font-style: italic; pointer-events: none;
+}
+.node:focus-visible .node-box { stroke: var(--gold); stroke-width: 2.5; }
 .node:focus { outline: none; }
 
-/* Links */
-.link { fill: none; stroke: var(--line); stroke-width: 2; }
-.link-spouse { stroke: var(--accent); stroke-width: 2.5; }
-.link-child { stroke: #5a6b7d; }
+/* Links — antique gold filaments */
+.link { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.link-spouse { stroke: var(--gold); stroke-width: 2; }
+.link-child { stroke: #6e5f38; }
 
 /* --- Detail panel ---------------------------------------------------------- */
 .detail {
@@ -124,9 +179,16 @@ button.danger:hover { background: rgba(255, 107, 107, 0.12); }
   width: 30px; height: 30px; padding: 0;
   font-size: 18px; line-height: 1;
 }
-.detail h2 { margin: 4px 0 2px; font-size: 20px; padding-right: 36px; }
-.detail h3 { margin: 18px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.d-dates { margin: 0 0 8px; color: var(--muted); }
+.detail h2 {
+  margin: 4px 0 2px; padding-right: 36px;
+  font-family: var(--font-display); font-weight: 600; font-size: 21px;
+  letter-spacing: 0.03em; color: var(--gold);
+}
+.detail h3 {
+  margin: 18px 0 6px; font-family: var(--font-display);
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
+}
+.d-dates { margin: 0 0 8px; color: var(--muted); font-style: italic; }
 .d-photo { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px; }
 .d-fields { margin: 8px 0; }
 .d-fields dt { color: var(--muted); font-size: 12px; }
@@ -168,9 +230,9 @@ button.link:hover { text-decoration: underline; }
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 22px; height: 22px; padding: 0 6px;
   border-radius: 11px; font-size: 12px; font-weight: 700;
-  background: var(--error); color: #fff;
+  background: var(--error); color: #1a211a;
 }
-.issues.clean .issues-badge { background: #2e7d52; }
+.issues.clean .issues-badge { background: var(--clean); }
 .issues.collapsed ul { display: none; }
 .issues ul { list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto; }
 .issue { display: flex; align-items: center; gap: 8px; padding: 6px 6px; border-top: 1px solid var(--line); font-size: 13px; }
@@ -191,7 +253,10 @@ button.link:hover { text-decoration: underline; }
 }
 .edit-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
 #edit-form { padding: 22px; }
-#edit-form h2 { margin: 0 0 14px; }
+#edit-form h2 {
+  margin: 0 0 14px; font-family: var(--font-display);
+  font-weight: 600; letter-spacing: 0.04em; color: var(--gold);
+}
 #edit-form label { display: block; margin: 12px 0 4px; font-size: 13px; color: var(--muted); }
 #edit-form input[type="text"], #edit-form textarea {
   width: 100%; padding: 8px 10px;
@@ -244,24 +309,25 @@ body:not(.edit-mode) #btn-add { display: none; }
 #print-root { display: none; }
 
 /* --- Print / archival ------------------------------------------------------ */
+/* Aged-parchment output: sepia ink on cream, antique-gold rules. */
 @media print {
   .toolbar, .detail, .issues, .flash, .fatal, .edit-dialog { display: none !important; }
-  html, body { overflow: visible; background: #fff; height: auto; }
+  .canvas::after { display: none !important; } /* no vignette over the print */
+  html, body { overflow: visible; background: #f3ead3; height: auto; }
   .canvas { position: static; inset: auto; }
   #tree { display: none; }
 
   #print-root { display: block !important; }
-  .print-svg { width: 100%; height: auto; background: #fff; }
+  .print-svg { width: 100%; height: auto; background: #f3ead3; }
 
-  /* Force light, high-contrast vector output. */
-  .print-svg .node-box { fill: #fff !important; stroke: #222 !important; }
-  .print-svg .node.gender-m .node-box { fill: #eef3fb !important; }
-  .print-svg .node.gender-f .node-box { fill: #fbeef5 !important; }
-  .print-svg .node-name { fill: #000 !important; }
-  .print-svg .node-dates { fill: #333 !important; }
-  .print-svg .link { stroke: #333 !important; }
-  .print-svg .link-spouse { stroke: #555 !important; }
-  .print-svg .node.selected .node-box { stroke-width: 1.5 !important; }
+  .print-svg .node-box { fill: #efe3c6 !important; stroke: #7a6024 !important; }
+  .print-svg .node.gender-m .node-box { fill: #e8e0c8 !important; }
+  .print-svg .node.gender-f .node-box { fill: #f0e2c8 !important; }
+  .print-svg .node-name { fill: #3a2c12 !important; }
+  .print-svg .node-dates { fill: #6b5526 !important; }
+  .print-svg .link { stroke: #8a6f2c !important; }
+  .print-svg .link-spouse { stroke: #8a6f2c !important; }
+  .print-svg .node.selected .node-box { stroke-width: 1.25 !important; }
 }
 
 @page { size: landscape; margin: 12mm; }

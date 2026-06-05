@@ -35,7 +35,10 @@ export class TreeRenderer {
 
     this.zoom = d3.zoom()
       .scaleExtent([0.1, 3])
-      .on("zoom", (event) => this.viewport.attr("transform", event.transform));
+      .on("zoom", (event) => {
+        this.viewport.attr("transform", event.transform);
+        this._applyParallax(event.transform);
+      });
     this.svg.call(this.zoom);
     // Drop d3-zoom's own double-click-to-zoom so node double-click can focus.
     this.svg.on("dblclick.zoom", null);
@@ -43,6 +46,17 @@ export class TreeRenderer {
     this.svg.on("click", () => this.select(null));
 
     this._bounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  }
+
+  // Drift the wallpaper with the tree at a reduced rate so it reads as a deeper
+  // plane — a subtle parallax that pans with the map and breathes on zoom.
+  _applyParallax({ x, y, k }) {
+    const PAN = 0.16;                          // wallpaper pans at 16% of the tree
+    const BASE = 120;                          // tile size (matches the SVG/CSS)
+    const size = BASE * (1 + (k - 1) * 0.35);  // dampened zoom response
+    const node = this.svg.node();
+    node.style.backgroundSize = `${size}px ${size}px`;
+    node.style.backgroundPosition = `${x * PAN}px ${y * PAN}px`;
   }
 
   // --- public API ----------------------------------------------------------

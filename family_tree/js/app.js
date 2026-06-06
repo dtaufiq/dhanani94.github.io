@@ -4,7 +4,6 @@ import { Store, lifespan, lifespanYears } from "./store.js";
 import { TreeRenderer } from "./render.js";
 import { validate } from "./validate.js";
 import { Editor } from "./edit.js";
-import { setupPrint } from "./print.js";
 
 const store = new Store();
 let renderer = null;
@@ -35,8 +34,6 @@ async function main() {
     onRender: updateViewCount,
   });
   editor = new Editor(store, { onAfterChange: onEditorChange });
-  const print = setupPrint(renderer, el("tree"));
-  el("btn-print").addEventListener("click", print);
 
   // Re-render + re-validate whenever the model changes.
   store.onChange(() => updateDirtyIndicator());
@@ -320,6 +317,7 @@ function wireToolbar() {
   el("btn-zoom-fit").addEventListener("click", () => renderer.resetToFit(true));
   el("btn-reset").addEventListener("click", () => resetFocus());
   el("btn-share").addEventListener("click", () => shareLink());
+  setupSearch();
 
   el("btn-edit-mode").addEventListener("click", toggleEditMode);
   el("btn-add").addEventListener("click", () => editor.openNew());
@@ -327,11 +325,95 @@ function wireToolbar() {
   el("btn-export").addEventListener("click", () => store.exportDownload());
   el("btn-save").addEventListener("click", onSave);
 
-  el("btn-import").addEventListener("click", () => el("import-file").click());
-  el("import-file").addEventListener("change", onImport);
-
   el("issues-header").addEventListener("click", () =>
     el("issues").classList.toggle("collapsed"));
+}
+
+// --- person search (autocomplete → focus mode) ------------------------------
+function setupSearch() {
+  const btn = el("btn-search");
+  const pop = el("search-pop");
+  const input = el("search-input");
+  const list = el("search-results");
+  let results = []; // {id,name,...} currently shown
+  let active = -1;
+
+  function open() {
+    pop.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+    input.setAttribute("aria-expanded", "true");
+    input.value = "";
+    render("");
+    input.focus();
+  }
+  function close() {
+    pop.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-expanded", "false");
+    active = -1;
+  }
+  function choose(id) { close(); focusOn(id); }
+
+  function render(query) {
+    const q = query.trim().toLowerCase();
+    results = store.all()
+      .filter((p) => q && (p.name || "").toLowerCase().includes(q))
+      .sort((a, b) => {
+        const an = (a.name || "").toLowerCase(), bn = (b.name || "").toLowerCase();
+        const rank = (n) => (n.startsWith(q) ? 0 : 1);
+        return rank(an) - rank(bn) || an.localeCompare(bn);
+      })
+      .slice(0, 8);
+    active = results.length ? 0 : -1;
+
+    list.innerHTML = "";
+    if (!results.length) {
+      const li = document.createElement("li");
+      li.className = "sr-empty";
+      li.textContent = q ? "No matches" : "Type a name…";
+      list.appendChild(li);
+      return;
+    }
+    results.forEach((p, i) => {
+      const li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.classList.toggle("active", i === active);
+      const name = document.createElement("span");
+      name.className = "sr-name";
+      name.textContent = p.name || "(no name)";
+      const dates = document.createElement("span");
+      dates.className = "sr-dates";
+      dates.textContent = lifespan(p);
+      li.append(name, dates);
+      // mousedown (not click) so the choice lands before the input blurs.
+      li.addEventListener("mousedown", (e) => { e.preventDefault(); choose(p.id); });
+      list.appendChild(li);
+    });
+  }
+
+  function setActive(i) {
+    const items = [...list.querySelectorAll('li[role="option"]')];
+    if (!items.length) return;
+    active = (i + items.length) % items.length;
+    items.forEach((el, idx) => el.classList.toggle("active", idx === active));
+    items[active].scrollIntoView({ block: "nearest" });
+  }
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation(); // don't let the document handler immediately re-close
+    pop.hidden ? open() : close();
+  });
+  input.addEventListener("input", () => render(input.value));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1); }
+    else if (e.key === "Enter") { e.preventDefault(); if (results[active]) choose(results[active].id); }
+    else if (e.key === "Escape") { e.preventDefault(); close(); btn.focus(); }
+  });
+  // Click anywhere outside the popover (or its button) closes it.
+  document.addEventListener("click", (e) => {
+    if (!pop.hidden && !pop.contains(e.target) && !btn.contains(e.target)) close();
+  });
 }
 
 function toggleEditMode() {
@@ -352,20 +434,6 @@ async function onSave() {
   } catch (err) {
     if (err && err.name === "AbortError") return; // user cancelled the picker
     alert("Save failed: " + err.message);
-  }
-}
-
-async function onImport(event) {
-  const file = event.target.files[0];
-  event.target.value = "";
-  if (!file) return;
-  try {
-    await store.importFromFile(file);
-    resetFocus();
-    renderer.resetToFit(false);
-    flash("Imported");
-  } catch (err) {
-    alert("Import failed: " + err.message);
   }
 }
 

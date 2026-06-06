@@ -204,15 +204,6 @@ export class Store {
     a.remove();
     URL.revokeObjectURL(url);
   }
-
-  // Import a .json from disk into the app (download/edit/re-import loop).
-  async importFromFile(file) {
-    const text = await file.text();
-    const json = JSON.parse(text);
-    this.setData(json);
-    this.dirty = true; // imported data isn't on disk at DATA_URL yet
-    this._emit();
-  }
 }
 
 // --- helpers ---------------------------------------------------------------

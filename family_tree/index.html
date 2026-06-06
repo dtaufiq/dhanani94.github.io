@@ -22,30 +22,16 @@
 
     <div class="tb-group focus-bar" id="focus-bar" hidden>
       <span class="focus-chip">Viewing <strong id="focus-label"></strong></span>
-      <button id="btn-reset" title="Back to the default branch" hidden>↺ Reset</button>
-      <button id="btn-share" title="Copy a shareable link to this view">🔗 Share</button>
     </div>
 
-    <div class="tb-group">
-      <button id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
-      <button id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
-      <button id="btn-zoom-fit" title="Reset to fit">Fit</button>
-    </div>
-
-    <div class="tb-group">
+    <div class="tb-group tb-secondary">
       <button id="btn-edit-mode" aria-pressed="false" hidden>Edit mode</button>
       <button id="btn-add" hidden>+ Add person</button>
     </div>
 
-    <div class="tb-group" id="save-controls" hidden>
+    <div class="tb-group tb-secondary" id="save-controls" hidden>
       <button id="btn-save" hidden title="Save directly to data/family.json">Save</button>
       <button id="btn-export" title="Download family.json">Export</button>
-      <button id="btn-import" title="Load a family.json from disk">Import</button>
-      <input type="file" id="import-file" accept="application/json,.json" hidden>
-    </div>
-
-    <div class="tb-group tb-right">
-      <button id="btn-print" title="Print / Save as PDF">Print</button>
     </div>
   </header>
 
@@ -86,6 +72,30 @@
     <button id="d-edit" class="primary" hidden>Edit</button>
     <button id="d-setroot" class="d-setroot" hidden>Set as default</button>
   </aside>
+
+  <!-- Search-a-person popover; opens above the bottom action bar. -->
+  <div class="search-pop" id="search-pop" hidden>
+    <input type="search" id="search-input" placeholder="Search for a person…"
+           autocomplete="off" role="combobox" aria-controls="search-results"
+           aria-expanded="false" aria-label="Search for a person">
+    <ul class="search-results" id="search-results" role="listbox"></ul>
+  </div>
+
+  <!-- View controls: a floating pill at the bottom on every screen size
+       (full-width bar on mobile — see the small-screen @media block). -->
+  <nav class="actionbar" id="actionbar" aria-label="View controls">
+    <button id="btn-search" title="Search for a person" aria-label="Search for a person" aria-expanded="false">
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false">
+        <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <line x1="10.6" y1="10.6" x2="14" y2="14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+    <button id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+    <button id="btn-zoom-fit" title="Reset to fit">Fit</button>
+    <button id="btn-reset" title="Back to the default branch" hidden>↺ Reset</button>
+    <button id="btn-share" title="Copy a shareable link to this view">🔗 Share</button>
+  </nav>
 
   <!-- Validation / issues panel -->
   <section class="issues clean collapsed" id="issues" aria-live="polite">
@@ -149,9 +159,6 @@
       </div>
     </form>
   </dialog>
-
-  <!-- Print-only container; the full-tree SVG is cloned here for printing. -->
-  <div id="print-root" aria-hidden="true"></div>
 
   <script type="module" src="js/app.js"></script>
 </body>

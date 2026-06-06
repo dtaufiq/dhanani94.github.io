@@ -1,4 +1,4 @@
-/* styles.css — screen UI + @media print rules for archival output.
+/* styles.css — screen UI for the family-tree viewer.
    Theme: an old-house tapestry — deep aged green, antique gold, parchment ink,
    classical serif type (no decorative graphics, just the palette + fonts). */
 
@@ -84,13 +84,23 @@ button.danger:hover { background: rgba(207, 96, 73, 0.14); border-color: var(--e
   z-index: 30;
 }
 .tb-group { display: flex; align-items: center; gap: 6px; }
+.tb-title { flex: none; }
 .tb-title strong {
   font-family: var(--font-display);
   font-size: 16px; font-weight: 600;
   letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--gold);
 }
-.tb-right { margin-left: auto; }
+/* The "Viewing X's side" chip absorbs the slack between the title and the
+   right-aligned controls. */
+.focus-bar { flex: 1 1 auto; min-width: 0; }
+/* The secondary controls (export/import/print/edit) hug the right edge —
+   works whether or not the (sometimes hidden) focus chip is present. */
+.tb-secondary:first-of-type { margin-left: auto; }
+/* Keep all top-bar controls at their natural size: only the focus chip absorbs
+   the squeeze, so buttons never shrink or wrap to different sizes by width. */
+.tb-secondary { flex: none; }
+.toolbar button { flex: none; white-space: nowrap; }
 .dirty { color: var(--warn); font-size: 12px; }
 .view-count {
   font-size: 12px; color: var(--muted);
@@ -103,11 +113,67 @@ button.danger:hover { background: rgba(207, 96, 73, 0.14); border-color: var(--e
   font-size: 13px; color: var(--muted);
   background: var(--panel-2); border: 1px solid var(--line);
   border-radius: 14px; padding: 3px 10px;
+  /* Flex item that ellipsizes: needs min-width:0 + inline-block so
+     text-overflow actually applies when the top bar runs out of room. */
+  display: inline-block; min-width: 0; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .focus-chip strong { color: var(--ink); }
-#btn-reset, #btn-share { font-size: 13px; padding: 4px 10px; }
-
 [aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* --- View controls (bottom action bar) ------------------------------------- */
+/* A floating pill centred at the bottom on every screen size; becomes a
+   full-width bar on mobile. Button sizing is fixed here (not per-breakpoint)
+   so the controls never resize as the window changes. */
+.actionbar {
+  position: fixed;
+  bottom: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 25;
+}
+.actionbar button {
+  font-size: 14px;
+  min-width: 40px; height: 36px;
+  padding: 0 14px;
+  white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+#btn-search { padding: 0; }
+
+/* Search-a-person popover, floated just above the action bar. */
+.search-pop {
+  position: fixed;
+  bottom: 62px; left: 50%; transform: translateX(-50%);
+  width: min(360px, calc(100vw - 28px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 26;
+  overflow: hidden;
+}
+#search-input {
+  width: 100%; padding: 10px 12px;
+  font: inherit; font-size: 15px;
+  color: var(--ink); background: var(--bg);
+  border: none; border-bottom: 1px solid var(--line);
+}
+#search-input:focus { outline: none; }
+.search-results { list-style: none; margin: 0; padding: 4px; max-height: 46vh; overflow-y: auto; }
+.search-results li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+}
+.search-results li.active, .search-results li:hover { background: var(--panel-2); }
+.search-results .sr-name { color: var(--ink); }
+.search-results .sr-dates { color: var(--muted); font-size: 12px; font-style: italic; white-space: nowrap; }
+.search-results .sr-empty { color: var(--muted); cursor: default; }
+.search-results .sr-empty:hover { background: none; }
 
 /* --- Canvas ---------------------------------------------------------------- */
 .canvas { position: absolute; inset: 52px 0 0 0; overflow: hidden; }
@@ -233,6 +299,9 @@ button.link:hover { text-decoration: underline; }
   background: var(--error); color: #1a211a;
 }
 .issues.clean .issues-badge { background: var(--clean); }
+/* A "No issues" bar is just noise — only surface the panel when there's
+   actually something to fix. */
+.issues.clean { display: none; }
 .issues.collapsed ul { display: none; }
 .issues ul { list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto; }
 .issue { display: flex; align-items: center; gap: 8px; padding: 6px 6px; border-top: 1px solid var(--line); font-size: 13px; }
@@ -296,7 +365,7 @@ button.link:hover { text-decoration: underline; }
 .hint { color: var(--muted); font-size: 13px; }
 
 .flash {
-  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px);
+  position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--accent); color: var(--accent-ink);
   padding: 8px 16px; border-radius: 20px; font-weight: 600;
   opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 40;
@@ -306,34 +375,41 @@ button.link:hover { text-decoration: underline; }
 /* Edit affordances hidden until edit mode is on (JS also gates them). */
 body:not(.edit-mode) #btn-add { display: none; }
 
-#print-root { display: none; }
-
-/* --- Print / archival ------------------------------------------------------ */
-/* Aged-parchment output: sepia ink on cream, antique-gold rules. */
-@media print {
-  .toolbar, .detail, .issues, .flash, .fatal, .edit-dialog { display: none !important; }
-  .canvas::after { display: none !important; } /* no vignette over the print */
-  html, body { overflow: visible; background: #f3ead3; height: auto; }
-  .canvas { position: static; inset: auto; }
-  #tree { display: none; }
-
-  #print-root { display: block !important; }
-  .print-svg { width: 100%; height: auto; background: #f3ead3; }
-
-  .print-svg .node-box { fill: #efe3c6 !important; stroke: #7a6024 !important; }
-  .print-svg .node.gender-m .node-box { fill: #e8e0c8 !important; }
-  .print-svg .node.gender-f .node-box { fill: #f0e2c8 !important; }
-  .print-svg .node-name { fill: #3a2c12 !important; }
-  .print-svg .node-dates { fill: #6b5526 !important; }
-  .print-svg .link { stroke: #8a6f2c !important; }
-  .print-svg .link-spouse { stroke: #8a6f2c !important; }
-  .print-svg .node.selected .node-box { stroke-width: 1.25 !important; }
-}
-
-@page { size: landscape; margin: 12mm; }
-
 /* --- Small screens (viewing) ----------------------------------------------- */
 @media (max-width: 640px) {
-  .detail { width: 100%; top: auto; bottom: 0; height: 55vh; border-left: none; border-top: 1px solid var(--line); }
-  .issues { width: calc(100% - 28px); }
+  /* Top bar: just the title + the "Viewing X" chip, which takes the slack.
+     Secondary controls (edit/add/save/export) only appear when there's room —
+     i.e. on wider screens. */
+  .toolbar { gap: 8px; padding: 0 10px; }
+  .tb-title strong { font-size: 14px; letter-spacing: 0.08em; }
+  .tb-secondary { display: none; }
+
+  /* The floating pill stretches into a full-width bar (replacing the old
+     "No issues" strip). Buttons keep their desktop size — only the container
+     changes — so they don't resize as the viewport crosses the breakpoint. */
+  .actionbar {
+    left: 0; right: 0; bottom: 0;
+    transform: none;
+    height: 52px;
+    justify-content: center; gap: 6px;
+    padding: 0 8px;
+    border: none; border-top: 1px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 30;
+  }
+  /* Tighter buttons so all six controls fit a phone width on one row. */
+  .actionbar button { min-width: 36px; padding: 0 10px; }
+
+  /* Leave room for the bottom bar. */
+  .canvas { inset: 52px 0 52px 0; }
+
+  .detail { width: 100%; top: auto; bottom: 52px; height: 55vh; border-left: none; border-top: 1px solid var(--line); }
+
+  /* Real issues (the panel is hidden when clean — see base rules) float just
+     above the bottom action bar. */
+  .issues:not(.clean) {
+    left: 10px; right: 10px; bottom: 60px;
+    width: auto; max-height: 50vh;
+  }
 }

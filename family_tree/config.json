@@ -1,0 +1,13 @@
+{
+  "_note": "Runtime app settings — applied on the fly so the source images stay unedited. 'photoFilter' is rendered to a CSS filter on every photo (detail panel today, and any future node thumbnails). Identity (no-op) values: sepia 0, contrast/brightness/saturate 1, grayscale/blur/hueRotate 0. Set enabled=false to turn the effect off entirely.",
+  "photoFilter": {
+    "enabled": true,
+    "sepia": 0.55,
+    "contrast": 1.08,
+    "brightness": 0.96,
+    "saturate": 0.9,
+    "grayscale": 0,
+    "blur": 0,
+    "hueRotate": 0
+  }
+}

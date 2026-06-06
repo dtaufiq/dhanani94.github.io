@@ -4,6 +4,7 @@ import { Store, lifespan, lifespanYears } from "./store.js";
 import { TreeRenderer } from "./render.js";
 import { validate } from "./validate.js";
 import { Editor } from "./edit.js";
+import { loadConfig, applyConfig } from "./config.js";
 
 const store = new Store();
 let renderer = null;
@@ -20,6 +21,10 @@ const el = (id) => document.getElementById(id);
 
 async function main() {
   wireToolbar();
+
+  // Apply runtime settings (e.g. the aged-photo filter) in parallel with the
+  // data load. Optional + non-fatal, so it never blocks or breaks startup.
+  loadConfig().then(applyConfig);
 
   try {
     await store.load();
